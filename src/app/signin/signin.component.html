@@ -1,0 +1,44 @@
+<mat-card class="register-container">
+    <h2>Sign in</h2>
+    <form [formGroup]="registerForm" (ngSubmit)="onRegister()">
+      <mat-form-field appearance="fill">
+        <mat-label>Email</mat-label>
+        <input matInput id="email" formControlName="email" type="email" />
+        <mat-error *ngIf="registerForm.controls['email'].invalid && registerForm.controls['email'].touched">
+          Please enter a valid email address.
+        </mat-error>
+      </mat-form-field>
+  
+      <mat-form-field appearance="fill">
+        <mat-label>Password</mat-label>
+        <input matInput id="password" formControlName="password" type="password" />
+        <mat-error *ngIf="registerForm.controls['password'].invalid && registerForm.controls['password'].touched">
+          Password must be at least 6 characters long.
+        </mat-error>
+      </mat-form-field>
+  
+      <mat-form-field appearance="fill">
+        <mat-label>Full Name</mat-label>
+        <input matInput id="fullName" formControlName="fullName" type="text" />
+        <mat-error *ngIf="registerForm.controls['fullName'].invalid && registerForm.controls['fullName'].touched">
+          Full name is required.
+        </mat-error>
+      </mat-form-field>
+  
+      <mat-form-field appearance="fill">
+        <mat-label>Role</mat-label>
+        <mat-select formControlName="role" id="role">
+          <mat-option value="USER">User</mat-option>
+          <mat-option value="REVIEWER">Reviewer</mat-option>
+        </mat-select>
+        <mat-error *ngIf="registerForm.controls['role'].invalid && registerForm.controls['role'].touched">
+          Role is required.
+        </mat-error>
+      </mat-form-field>
+  
+      <button mat-raised-button color="primary" type="submit" [disabled]="!SigninSignal()">Sign in</button>
+    </form>
+
+    <p>Already registered?<a mat-button (click)="navigateToLogin()" target="_blank">Login here</a></p>
+  </mat-card>
+  

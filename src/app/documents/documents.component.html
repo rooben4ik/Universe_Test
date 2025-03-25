@@ -1,0 +1,114 @@
+<div class="documents-header">
+    <button mat-button (click)="openAddDocumentDialog()">Add Document</button>
+  </div>
+  
+  <!-- Documents Table -->
+  <table mat-table [dataSource]="documents">
+    <!-- ID Column -->
+    <ng-container matColumnDef="id">
+      <th mat-header-cell *matHeaderCellDef> Document ID </th>
+      <td mat-cell *matCellDef="let document"> {{ document.id }} </td>
+    </ng-container>
+  
+    <!-- Name Column -->
+    <ng-container matColumnDef="name">
+      <th mat-header-cell *matHeaderCellDef> Document Name </th>
+      <td mat-cell *matCellDef="let document"> {{ document.name }} </td>
+    </ng-container>
+  
+    <!-- Status Column -->
+    <ng-container matColumnDef="status">
+      <th mat-header-cell *matHeaderCellDef> Status </th>
+      <td mat-cell *matCellDef="let document"> {{ document.status }} </td>
+    </ng-container>
+  
+    <!-- Creator Column -->
+    <ng-container matColumnDef="creator">
+      <th mat-header-cell *matHeaderCellDef> Creator </th>
+      <td mat-cell *matCellDef="let document"> {{ document.creator.fullName }} ({{ document.creator.role }}) </td>
+    </ng-container>
+  
+    <!-- File URL Column -->
+    <ng-container matColumnDef="fileUrl">
+      <th mat-header-cell *matHeaderCellDef> File URL </th>
+      <td mat-cell *matCellDef="let document"> {{ document.fileUrl }} </td>
+    </ng-container>
+  
+    <!-- Created At Column -->
+    <ng-container matColumnDef="createdAt">
+      <th mat-header-cell *matHeaderCellDef> Created At </th>
+      <td mat-cell *matCellDef="let document"> {{ document.createdAt | date:'short' }} </td>
+    </ng-container>
+  
+    <!-- Updated At Column -->
+    <ng-container matColumnDef="updatedAt">
+      <th mat-header-cell *matHeaderCellDef> Updated At </th>
+      <td mat-cell *matCellDef="let document"> {{ document.updatedAt | date:'short' }} </td>
+    </ng-container>
+  
+    <!-- Actions Column -->
+    <ng-container matColumnDef="actions">
+      <th mat-header-cell *matHeaderCellDef> Actions </th>
+      <td mat-cell *matCellDef="let document">
+        <button mat-icon-button (click)="editDocument(document)">
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button mat-icon-button (click)="deleteDocument(document)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </td>
+    </ng-container>
+  
+    <!-- Header and Rows -->
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+  </table>
+  
+  <!-- Add Document Modal Template -->
+  <ng-template #addDocumentTemplate>
+    <form (ngSubmit)="onSubmitAddDocument()">
+      <mat-form-field>
+        <mat-label>Document Name</mat-label>
+        <input matInput [(ngModel)]="newDocument.name" name="name" required />
+      </mat-form-field>
+  
+      <mat-form-field>
+        <mat-label>Status</mat-label>
+        <mat-select [(ngModel)]="newDocument.status" name="status" required>
+          <mat-option value="DRAFT">Draft</mat-option>
+          <mat-option value="PENDING">Pending</mat-option>
+          <mat-option value="APPROVED">Approved</mat-option>
+          <mat-option value="REJECTED">Rejected</mat-option>
+        </mat-select>
+      </mat-form-field>
+  
+      <!-- File Upload Field without mat-form-field -->
+      <div>
+        <label for="fileInput">Document File</label>
+        <input type="file" (change)="onFileChange($event)" name="file" required id="fileInput" />
+      </div>
+  
+      <button mat-raised-button type="submit">Add Document</button>
+    </form>
+  </ng-template>
+  
+  <!-- Edit Document Modal Template -->
+  <ng-template #editDocumentTemplate let-data="data">
+    <form (ngSubmit)="onSubmitEditDocument()">
+      <mat-form-field>
+        <mat-label>Document Name</mat-label>
+        <input matInput [(ngModel)]="newDocument.name" name="name" [value]="data.name" required />
+      </mat-form-field>
+      <mat-form-field>
+        <mat-label>Status</mat-label>
+        <mat-select [(ngModel)]="newDocument.status" name="status" [value]="data.status" required>
+          <mat-option value="DRAFT">Draft</mat-option>
+          <mat-option value="PENDING">Pending</mat-option>
+          <mat-option value="APPROVED">Approved</mat-option>
+          <mat-option value="REJECTED">Rejected</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <button mat-raised-button type="submit">Update Document</button>
+    </form>
+  </ng-template>
+  
