@@ -7,7 +7,9 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { Router } from '@angular/router';
 import { MatSelectModule } from '@angular/material/select';
-import { HttpService } from '../http.service';
+import { HttpService } from '../services/http.service';
+import { TokenService } from '../services/token.service';
+import {MatSnackBar, MatSnackBarModule} from '@angular/material/snack-bar';
 @Component({
   selector: 'app-signin',
   standalone: true,
@@ -19,19 +21,20 @@ import { HttpService } from '../http.service';
     MatCardModule,
     MatFormFieldModule,
     MatSelectModule,
-    
+    MatSnackBarModule
   ],
   
-  providers: [HttpService],
   templateUrl: './signin.component.html',
   styleUrls: ['./signin.component.scss']
 })
 export class SigninComponent {  registerForm: FormGroup;
   SigninSignal = signal(false);
-
-  constructor(private fb: FormBuilder,
-              private router: Router,
-              public httpService:HttpService
+  token:any
+  constructor(public fb: FormBuilder,
+              public router: Router,
+              public httpService:HttpService,
+              public tokenService: TokenService,
+              public snackBar: MatSnackBar
   ) {
     this.registerForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -43,25 +46,40 @@ export class SigninComponent {  registerForm: FormGroup;
       this.SigninSignal.set(this.registerForm.valid);
     });
   }
-  ngOnInit(){
-    const body ={
-      email: "user@example.com",
-      password: "string"
-    }
-    this.httpService.authControl(body).subscribe(response => {
-      console.log(response); 
-    });
-  }
+  
+  // ngOnInit(){
+  //   this.httpService.getUser().subscribe(response => {
+  //   });
+  // }
+
+        // this.router.navigate(['/login']);
+
   onRegister(): void {
-    if (this.registerForm.valid) {
-      const formData = this.registerForm.value;
-      console.log('Registration data:', formData);
+      this.httpService.registerUser(this.registerForm.value).subscribe(
+        response => {
+          if (response) {
+            this.router.navigate(['/login']);
+            this.snackBar.open('Now you just need login', 'Close', {
+              duration: 3000,
+              panelClass: ['mat-acces'],
+            });
+          } else {
+            this.snackBar.open('The email is already registered. Please try another one.', 'Close', {
+              duration: 3000,
+              panelClass: ['mat-warn'],
+            });
+          }
+        },
+        error => {
+          const errorMessage = error?.error?.message || 'An error occurred during registration.';
+          this.snackBar.open(errorMessage, 'Close', {
+            duration: 3000,
+            panelClass: ['mat-warn'],
+          });
+        }
+      );
 
-      // this.router.navigate(['/login']);
-
-    } else {
-      console.log('Form is invalid');
-    }
+    
   }
   navigateToLogin() {
     this.router.navigate(['/login']);

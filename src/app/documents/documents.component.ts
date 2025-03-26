@@ -10,6 +10,9 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
 import { MatDialogModule } from '@angular/material/dialog';
 import { CommonModule } from '@angular/common';
+import { TokenService } from '../services/token.service';
+import { Router } from '@angular/router';
+import { HttpService } from '../services/http.service';
 
 interface Document {
   id: string;
@@ -45,7 +48,7 @@ interface Document {
 export class DocumentsComponent implements AfterViewInit {
   @ViewChild('addDocumentTemplate', { static: false }) addDocumentTemplate!: TemplateRef<any>;
   @ViewChild('editDocumentTemplate', { static: false }) editDocumentTemplate!: TemplateRef<any>;
-
+  userInfo:any
   newDocument: any = {
     name: '',
     status: 'DRAFT',
@@ -56,9 +59,26 @@ export class DocumentsComponent implements AfterViewInit {
 
   displayedColumns: string[] = ['id', 'name', 'status', 'creator', 'fileUrl', 'createdAt', 'updatedAt', 'actions'];
 
-  private dialog = inject(MatDialog);
-  private snackBar = inject(MatSnackBar);
-
+  constructor( public tokenService:TokenService, public dialog:MatDialog, public snackBar :MatSnackBar, public router:Router,public httpService:HttpService){
+    if (!this.tokenService.getToken()) {
+      this.router.navigate(['/login']);
+    }
+  }
+  ngOnInit(){
+    this.httpService.getUser().subscribe(
+      response => {
+        console.log(response)
+        this.userInfo = response
+      },
+      error => {
+        const errorMessage = error?.error?.message;
+        this.snackBar.open(errorMessage, 'Close', {
+          duration: 3000,
+          panelClass: ['mat-warn'],
+        });
+      }
+    );
+  }
   ngAfterViewInit() {
     if (!this.addDocumentTemplate || !this.editDocumentTemplate) {
       console.error('Template references are not defined correctly');
@@ -137,7 +157,11 @@ export class DocumentsComponent implements AfterViewInit {
   onFileChange(event: any) {
     const file = event.target.files[0];
     if (file) {
-      this.newDocument.file = file; // Зберігаємо файл
+      this.newDocument.file = file; 
     }
+  }
+  logout() {
+    this.tokenService.clearToken();
+    this.router.navigate(['/login']); 
   }
 }

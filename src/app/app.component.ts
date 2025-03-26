@@ -5,8 +5,7 @@ import { RouterOutlet } from '@angular/router';
   selector: 'app-root',
   imports: [RouterOutlet],
   templateUrl: './app.component.html',
-  styleUrl: './app.component.scss',
-  host: { 'ngSkipHydration': 'true' }
+  styleUrl: './app.component.scss'
 })
 export class AppComponent {
   title = 'universe_test';
