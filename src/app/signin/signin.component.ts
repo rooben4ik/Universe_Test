@@ -29,7 +29,6 @@ import {MatSnackBar, MatSnackBarModule} from '@angular/material/snack-bar';
 })
 export class SigninComponent {  registerForm: FormGroup;
   SigninSignal = signal(false);
-  token:any
   constructor(public fb: FormBuilder,
               public router: Router,
               public httpService:HttpService,
@@ -46,13 +45,7 @@ export class SigninComponent {  registerForm: FormGroup;
       this.SigninSignal.set(this.registerForm.valid);
     });
   }
-  
-  // ngOnInit(){
-  //   this.httpService.getUser().subscribe(response => {
-  //   });
-  // }
 
-        // this.router.navigate(['/login']);
 
   onRegister(): void {
       this.httpService.registerUser(this.registerForm.value).subscribe(

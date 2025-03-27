@@ -1,4 +1,4 @@
-import { Component, ViewChild, AfterViewInit, inject } from '@angular/core';
+import { Component, ViewChild, AfterViewInit, signal,  computed, effect } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { TemplateRef } from '@angular/core';
@@ -13,21 +13,10 @@ import { CommonModule } from '@angular/common';
 import { TokenService } from '../services/token.service';
 import { Router } from '@angular/router';
 import { HttpService } from '../services/http.service';
-
-interface Document {
-  id: string;
-  name: string;
-  status: string;
-  fileUrl: string;
-  createdAt: string;
-  updatedAt: string;
-  creator: {
-    id: string;
-    email: string;
-    fullName: string;
-    role: string;
-  };
-}
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTableDataSource } from '@angular/material/table';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { MatSort } from '@angular/material/sort'
 
 @Component({
   selector: 'app-documents',
@@ -42,34 +31,74 @@ interface Document {
     MatTableModule,
     MatSelectModule,
     MatInputModule,
-    MatDialogModule
+    MatDialogModule,
+    MatProgressSpinnerModule,
+    MatPaginatorModule 
   ]
 })
 export class DocumentsComponent implements AfterViewInit {
   @ViewChild('addDocumentTemplate', { static: false }) addDocumentTemplate!: TemplateRef<any>;
   @ViewChild('editDocumentTemplate', { static: false }) editDocumentTemplate!: TemplateRef<any>;
-  userInfo:any
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
+  @ViewChild(MatSort) sort!: MatSort;
+  statusFilter: string = '';
+  userInfo: any;
+  changedStatus:any;
+  documentName:any;
+  docId:any;
+  userList:any;
+  creatorFilter:any;
   newDocument: any = {
     name: '',
     status: 'DRAFT',
-    file: null, 
+    file: null,
   };
-
-  documents: Document[] = [];
-
-  displayedColumns: string[] = ['id', 'name', 'status', 'creator', 'fileUrl', 'createdAt', 'updatedAt', 'actions'];
-
-  constructor( public tokenService:TokenService, public dialog:MatDialog, public snackBar :MatSnackBar, public router:Router,public httpService:HttpService){
+  currentPage = signal(1);
+  pageSize = signal(5);
+  documents: any[] = [];
+  public dataSource!: MatTableDataSource<any>;
+  displayedColumns: string[] = ['name', 'status', 'createdAt', 'updatedAt', 'actions'];
+  documentsSignal = signal<any[]>([]);
+  loadingSignal = signal(false);
+  constructor(
+    public tokenService: TokenService,
+    public dialog: MatDialog,
+    public snackBar: MatSnackBar,
+    public router: Router,
+    public httpService: HttpService
+  ) {
     if (!this.tokenService.getToken()) {
       this.router.navigate(['/login']);
     }
+    effect(() => {
+      this.loadDocuments();
+    });
   }
-  ngOnInit(){
+
+  ngOnInit() {
+
+    this.dataSource = new MatTableDataSource();
     this.httpService.getUser().subscribe(
       response => {
-        console.log(response)
-        this.userInfo = response
-      },
+        this.userInfo = response;
+        if (this.userInfo?.role === 'REVIEWER') {
+          const index = this.displayedColumns.length - 1; 
+          this.displayedColumns.splice(index, 0, 'creator'); 
+        }        },
+
+      error => {
+        const errorMessage = error?.error?.message;
+        this.snackBar.open(errorMessage, 'Close', {
+          duration: 3000,
+          panelClass: ['mat-warn'],
+        });
+      }
+    );
+    this.httpService.getUsersList(1,100).subscribe(
+      response => {
+        this.userList = response?.results;
+       },
+
       error => {
         const errorMessage = error?.error?.message;
         this.snackBar.open(errorMessage, 'Close', {
@@ -79,11 +108,21 @@ export class DocumentsComponent implements AfterViewInit {
       }
     );
   }
-  ngAfterViewInit() {
-    if (!this.addDocumentTemplate || !this.editDocumentTemplate) {
-      console.error('Template references are not defined correctly');
+
+    ngAfterViewInit() {
+      if (this.paginator) {
+        this.paginator.page.subscribe(event => {
+          this.currentPage.set(event.pageIndex + 1);
+          this.pageSize.set(event.pageSize);
+          this.loadDocuments();
+        });
+      }
+      if (this.sort) {
+        this.sort.sortChange.subscribe(() => {
+          this.loadDocuments(); 
+        });
+      }
     }
-  }
 
   openAddDocumentDialog() {
     const dialogRef = this.dialog.open(this.addDocumentTemplate);
@@ -94,7 +133,11 @@ export class DocumentsComponent implements AfterViewInit {
     });
   }
 
-  editDocument(document: Document) {
+  editDocument(document: any) {
+    console.log(document);
+    this.docId = document?.id
+    this.documentName = document?.name
+    // this.changedStatus = document?.status
     const dialogRef = this.dialog.open(this.editDocumentTemplate, { data: document });
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
@@ -106,7 +149,7 @@ export class DocumentsComponent implements AfterViewInit {
   onSubmitAddDocument() {
     if (this.newDocument.name && this.newDocument.status) {
       this.documents.push(this.newDocument);
-      this.snackBar.open('Document added successfully!', '', { duration: 2000 });
+
       this.newDocument = {
         id: '',
         name: '',
@@ -131,12 +174,12 @@ export class DocumentsComponent implements AfterViewInit {
     }
   }
 
-  addDocument(newDocument: Document) {
+  addDocument(newDocument: any) {
     this.documents.push(newDocument);
     this.snackBar.open('Document added successfully!', '', { duration: 2000 });
   }
 
-  updateDocument(updatedDocument: Document) {
+  updateDocument(updatedDocument: any) {
     const index = this.documents.findIndex(doc => doc.id === updatedDocument.id);
     if (index !== -1) {
       this.documents[index] = updatedDocument;
@@ -144,24 +187,176 @@ export class DocumentsComponent implements AfterViewInit {
     }
   }
 
-  deleteDocument(document: Document) {
-    if (document.status === 'DRAFT' || document.status === 'REVOKED') {
-      this.documents = this.documents.filter(doc => doc.id !== document.id);
-      this.snackBar.open('Document deleted successfully!', '', { duration: 2000 });
-    }
+  deleteDocument(document: any) {
+    this.httpService.deleteDocument(document?.id).subscribe(
+      (response: any) => {
+        this.snackBar.open('Document deleted successfully!', '', { duration: 2000 });
+          this.loadDocuments();
+              },
+      (error) => {
+        const errorMessage = error?.error?.message || 'Try one more time';
+        this.snackBar.open(errorMessage, 'Close', {
+          duration: 3000,
+          panelClass: ['mat-warn'],
+        });
+      }
+    );
   }
-
-
-
-
+  revokeDocument(document: any) {
+    this.httpService.sendToRevokeDocument(document?.id).subscribe(
+      (response: any) => {
+        this.snackBar.open('Document revoked successfully!', '', { duration: 2000 });
+          this.loadDocuments();
+              },
+      (error) => {
+        const errorMessage = error?.error?.message || 'Try one more time';
+        this.snackBar.open(errorMessage, 'Close', {
+          duration: 3000,
+          panelClass: ['mat-warn'],
+        });
+      }
+    );
+  }
   onFileChange(event: any) {
     const file = event.target.files[0];
     if (file) {
-      this.newDocument.file = file; 
+      this.newDocument.file = file;
     }
   }
+
   logout() {
     this.tokenService.clearToken();
-    this.router.navigate(['/login']); 
+    this.router.navigate(['/login']);
+  }
+
+  closeAddDocumentDialog() {
+    this.dialog.closeAll();
+  }
+
+  get loading() {
+    return this.httpService.loadingSignal();
+  }
+
+  sendReq() {
+    if (!this.newDocument.name || !this.newDocument.status || !this.newDocument.file) {
+      this.snackBar.open('Please check all rows', '', {
+        duration: 2000,
+        panelClass: ['mat-warn']
+      });
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('name', this.newDocument.name);
+    formData.append('status', this.newDocument.status);
+    formData.append('file', this.newDocument.file);
+
+    this.httpService.createDocument(formData).subscribe(
+      (response: any) => {
+        this.snackBar.open('Document added successfully!', '', { duration: 2000 });
+        this.dialog.closeAll();
+        this.newDocument = { name: '', status: 'DRAFT', file: null };
+          this.loadDocuments();
+             },
+      (error) => {
+        const errorMessage = error?.error?.message || 'Retry 1 more time';
+        this.snackBar.open(errorMessage, 'Close', {
+          duration: 3000,
+          panelClass: ['mat-warn'],
+        });
+      }
+    );
+  }
+
+  loadDocuments() {
+    const page = this.currentPage();
+    const size = this.pageSize();
+    this.dataSource.data = []
+    const params: any = { page, size };
+    if (this.statusFilter) {
+      params.status = this.statusFilter;
+    }
+    if (this.creatorFilter) {
+      params.creatorId = this.creatorFilter;
+    }
+    this.loadingSignal.set(true);
+    this.httpService.getDocumentsList(params).subscribe(
+      (docs: any = {}) => {
+        if(this.userInfo?.role === 'REVIEWER'){
+          let filteredDocs = docs?.results || [];
+          if (this.userInfo?.role === 'REVIEWER') {
+            filteredDocs = filteredDocs.filter((doc:any) => doc.status !== 'Draft');
+          }  
+          this.documentsSignal.set(filteredDocs);
+          this.dataSource.data = this.documentsSignal();
+        }
+        else{
+          this.documentsSignal.set(docs?.results || []);
+          this.dataSource.data = this.documentsSignal();  
+        }
+        if (this.paginator) {
+          this.paginator.length = docs?.count || 0;
+        }
+
+        this.loadingSignal.set(false);
+      },
+      error => {
+        this.snackBar.open('Error loading documents', '', { duration: 2000 });
+        this.loadingSignal.set(false);
+      }
+    );
+  }
+  
+  applyStatusFilter(status: string) {   
+    console.log(status);
+    this.statusFilter = status;
+
+    this.loadDocuments()
+  }
+  applyCreatorFilter(creator: string) {   
+    console.log(creator);
+    this.creatorFilter = creator;
+
+    this.loadDocuments()
+  }
+  changeStatus(status:any) {   
+    console.log(this.docId);
+    console.log(status);
+    this.httpService.changeStatusDocument(this.docId,{status:status}).subscribe(
+      (response: any) => {
+        this.snackBar.open('Document changed successfully!', '', { duration: 2000 });
+        this.dialog.closeAll();
+        this.newDocument = { name: '', status: 'DRAFT', file: null };
+          this.loadDocuments();
+             },
+      (error) => {
+        const errorMessage = error?.error?.message || 'Retry 1 more time';
+        this.snackBar.open(errorMessage, 'Close', {
+          duration: 3000,
+          panelClass: ['mat-warn'],
+        });
+      }
+    );
+
+  }
+  updateStatus(status:any) {   
+    console.log(this.docId);
+    console.log(status);
+    this.httpService.UpdateDocument(this.docId,{name:status}).subscribe(
+      (response: any) => {
+        this.snackBar.open('Document changed successfully!', '', { duration: 2000 });
+        this.dialog.closeAll();
+        this.newDocument = { name: '', status: 'DRAFT', file: null };
+          this.loadDocuments();
+             },
+      (error) => {
+        const errorMessage = error?.error?.message || 'Retry 1 more time';
+        this.snackBar.open(errorMessage, 'Close', {
+          duration: 3000,
+          panelClass: ['mat-warn'],
+        });
+      }
+    );
+
   }
 }

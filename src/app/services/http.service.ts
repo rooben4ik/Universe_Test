@@ -37,7 +37,7 @@ export class HttpService {
   }
   getUsersList(page:any,size:any): Observable<any> {
     this.loadingSignal.set(true); 
-    return this.apiService.get(this.apiUrl + `users/page=${page}/size=${size}`, undefined, this.headers).pipe(
+    return this.apiService.get(this.apiUrl + `user/users?page=${page}&size=${size}`, undefined, this.headers).pipe(
       map((response) => {
         this.loadingSignal.set(false);
         this.dataSignal.set(response); 
@@ -68,7 +68,7 @@ export class HttpService {
   //Auth endp
   authControl(body: any): Observable<any> {
     this.loadingSignal.set(true); 
-    return this.apiService.post(this.apiUrl + 'auth/login', body,this.headers).pipe(
+    return this.apiService.post(this.apiUrl + 'auth/login', body).pipe(
       map((response) => {
         this.loadingSignal.set(false);
         this.dataSignal.set(response); 
@@ -82,9 +82,9 @@ export class HttpService {
     );
   }
   // Document endp
-  createDocument(body: any): Observable<any> {
+  createDocument(formData: FormData): Observable<any> {
     this.loadingSignal.set(true); 
-    return this.apiService.post(this.apiUrl + 'document', body,this.headers).pipe(
+    return this.apiService.post(this.apiUrl + 'document', formData,this.headers).pipe(
       map((response) => {
         this.loadingSignal.set(false);
         this.dataSignal.set(response); 
@@ -112,9 +112,9 @@ export class HttpService {
       })
     );
   }
-  sendToRevokeDocument(id:any,body: any): Observable<any> {
+  sendToRevokeDocument(id:any,): Observable<any> {
     this.loadingSignal.set(true); 
-    return this.apiService.post(this.apiUrl + `document/${id}/revoke-review`, body,this.headers).pipe(
+    return this.apiService.post(this.apiUrl + `document/${id}/revoke-review`, undefined,this.headers).pipe(
       map((response) => {
         this.loadingSignal.set(false);
         this.dataSignal.set(response); 
@@ -172,9 +172,9 @@ export class HttpService {
       })
     );
   }
-  getDocumentsList(page:any,size:any): Observable<any> {
+  getDocumentsList(params: any): Observable<any> {
     this.loadingSignal.set(true); 
-    return this.apiService.get(this.apiUrl + `document/page=${page}/size=${size}`,undefined, this.headers).pipe(
+    return this.apiService.get(this.apiUrl + `document`, params , this.headers).pipe(
       map((response) => {
         this.loadingSignal.set(false);
         this.dataSignal.set(response); 

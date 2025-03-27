@@ -7,15 +7,24 @@ export class TokenService {
   private tokenKey = 'auth_token';
 
   constructor() { }
+  
   setToken(token: string): void {
-    localStorage.setItem(this.tokenKey, token);
+    if(localStorage){
+      localStorage?.setItem(this.tokenKey, token);
+
+    }
   }
 
   getToken(): string | null {
-    return localStorage.getItem(this.tokenKey);
+    if (typeof localStorage !== 'undefined' && localStorage !== null) {
+      return localStorage.getItem(this.tokenKey);
+    }
+    return null;
   }
 
   clearToken(): void {
-    localStorage.removeItem(this.tokenKey);
+    if(localStorage){
+      localStorage?.removeItem(this.tokenKey);
+    }
   }
 }
