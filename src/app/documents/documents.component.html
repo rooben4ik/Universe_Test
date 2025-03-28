@@ -19,7 +19,7 @@
         </mat-select>
 
         </mat-form-field>
-
+  
         <mat-form-field appearance="outline" *ngIf="userInfo?.role == 'REVIEWER'">
             <mat-label>Creator</mat-label>
         <mat-select (selectionChange)="applyCreatorFilter($event.value)">
@@ -29,11 +29,11 @@
         </mat-select>
     </mat-form-field>
 
-    <table mat-table [dataSource]="dataSource" matSort>
+    <table mat-table [dataSource]="dataSource" matSort (matSortChange)="announceSortChange($event)">
   
       <!-- Name Column -->
       <ng-container matColumnDef="name">
-        <th mat-header-cell mat-sort-header *matHeaderCellDef> Document Name </th>
+        <th mat-header-cell  *matHeaderCellDef mat-sort-header> Document Name </th>
         <td mat-cell *matCellDef="let document"> {{ document?.name }} </td>
       </ng-container>
   
@@ -45,7 +45,7 @@
   
       <!-- Creator Column -->
       <ng-container matColumnDef="creator" *ngIf="userInfo?.role === 'REVIEWER'">
-        <th mat-header-cell mat-sort-header *matHeaderCellDef> Creator </th>
+        <th mat-header-cell *matHeaderCellDef> Creator </th>
         <td mat-cell *matCellDef="let document"> {{ document?.creator?.fullName }} </td>
       </ng-container>
   
@@ -63,12 +63,12 @@
   
       <!-- Actions Column -->
       <ng-container matColumnDef="actions">
-        <th mat-header-cell mat-sort-header *matHeaderCellDef> Actions </th>
+        <th mat-header-cell  *matHeaderCellDef> Actions </th>
         <td mat-cell *matCellDef="let document">
           <button *ngIf="userInfo?.role === 'REVIEWER' && document.status === 'UNDER_REVIEW' "  mat-icon-button (click)="editDocument(document)">
             <mat-icon>edit</mat-icon>
           </button>
-          <button *ngIf="userInfo?.role == 'USER'  && document.status === 'DRAFT' || document.status === 'REVOKED'" mat-icon-button (click)="deleteDocument(document)">
+          <button *ngIf="userInfo?.role == 'USER'  && (document.status === 'DRAFT' || document.status === 'REVOKED')" mat-icon-button (click)="deleteDocument(document)">
             <mat-icon>delete</mat-icon>
           </button>
           <button *ngIf="userInfo?.role == 'USER'  && document.status === 'READY_FOR_REVIEW'" mat-icon-button (click)="revokeDocument(document)">
@@ -76,6 +76,9 @@
           </button>
           <button *ngIf="userInfo?.role == 'USER'"  mat-icon-button (click)="editDocument(document)">
             <mat-icon>edit</mat-icon>
+          </button>
+          <button  mat-icon-button (click)="openDocument(document)">
+            <mat-icon>remove_red_eye</mat-icon>
           </button>
         </td>
       </ng-container>
@@ -112,11 +115,7 @@
           <mat-label>Status</mat-label>
           <mat-select [(ngModel)]="newDocument.status" name="status" required>
             <mat-option value="DRAFT">Draft</mat-option>
-            <mat-option value="REVOKE">Revoke</mat-option>
-            <mat-option value="READY_FOR_REVIEW">Ready For Review</mat-option>
             <mat-option value="UNDER_REVIEW">Under Review</mat-option>
-            <mat-option value="APPROVED">Approved</mat-option>
-            <mat-option value="DECLINED">Declined</mat-option>
           </mat-select>
         </mat-form-field>
   
@@ -178,4 +177,3 @@
         <mat-spinner></mat-spinner>
       </div>
   </ng-template>
-  

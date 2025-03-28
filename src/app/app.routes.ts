@@ -17,5 +17,9 @@ export const appRoutes: Routes = [
       {
         path: 'documents',
         loadComponent: () => import('./documents/documents.component').then(m => m.DocumentsComponent)
+      },
+      {
+        path: 'document/:id',
+        loadComponent: () => import('./pdf-viewer/pdf-viewer.component').then(m => m.PdfViewerComponent)
       }
   ];

@@ -1,4 +1,4 @@
-import { Component, ViewChild, AfterViewInit, signal,  computed, effect } from '@angular/core';
+import { Component, ViewChild, AfterViewInit, signal,  effect, inject} from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { TemplateRef } from '@angular/core';
@@ -11,12 +11,13 @@ import { MatInputModule } from '@angular/material/input';
 import { MatDialogModule } from '@angular/material/dialog';
 import { CommonModule } from '@angular/common';
 import { TokenService } from '../services/token.service';
-import { Router } from '@angular/router';
 import { HttpService } from '../services/http.service';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
-import { MatSort } from '@angular/material/sort'
+import { MatSort, MatSortModule, Sort } from '@angular/material/sort'
+import {LiveAnnouncer} from '@angular/cdk/a11y';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-documents',
@@ -33,7 +34,8 @@ import { MatSort } from '@angular/material/sort'
     MatInputModule,
     MatDialogModule,
     MatProgressSpinnerModule,
-    MatPaginatorModule 
+    MatPaginatorModule,
+    MatSortModule,
   ]
 })
 export class DocumentsComponent implements AfterViewInit {
@@ -41,6 +43,7 @@ export class DocumentsComponent implements AfterViewInit {
   @ViewChild('editDocumentTemplate', { static: false }) editDocumentTemplate!: TemplateRef<any>;
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
+  private _liveAnnouncer = inject(LiveAnnouncer);
   statusFilter: string = '';
   userInfo: any;
   changedStatus:any;
@@ -53,6 +56,7 @@ export class DocumentsComponent implements AfterViewInit {
     status: 'DRAFT',
     file: null,
   };
+  sortedFile:any;
   currentPage = signal(1);
   pageSize = signal(5);
   documents: any[] = [];
@@ -94,19 +98,22 @@ export class DocumentsComponent implements AfterViewInit {
         });
       }
     );
-    this.httpService.getUsersList(1,100).subscribe(
-      response => {
-        this.userList = response?.results;
-       },
+    if(this.userInfo?.role === 'REVIEWER'){
+      this.httpService.getUsersList(1,100).subscribe(
+        response => {
+          this.userList = response?.results;
+         },
+  
+        error => {
+          const errorMessage = error?.error?.message;
+          this.snackBar.open(errorMessage, 'Close', {
+            duration: 3000,
+            panelClass: ['mat-warn'],
+          });
+        }
+      );
+    }
 
-      error => {
-        const errorMessage = error?.error?.message;
-        this.snackBar.open(errorMessage, 'Close', {
-          duration: 3000,
-          panelClass: ['mat-warn'],
-        });
-      }
-    );
   }
 
     ngAfterViewInit() {
@@ -278,15 +285,18 @@ export class DocumentsComponent implements AfterViewInit {
     }
     if (this.creatorFilter) {
       params.creatorId = this.creatorFilter;
+
+    }
+    if (this.sortedFile) {
+      params.sort = this.sortedFile;
+
     }
     this.loadingSignal.set(true);
     this.httpService.getDocumentsList(params).subscribe(
       (docs: any = {}) => {
         if(this.userInfo?.role === 'REVIEWER'){
           let filteredDocs = docs?.results || [];
-          if (this.userInfo?.role === 'REVIEWER') {
-            filteredDocs = filteredDocs.filter((doc:any) => doc.status !== 'Draft');
-          }  
+          filteredDocs = filteredDocs.filter((doc:any) => doc.status !== 'Draft');
           this.documentsSignal.set(filteredDocs);
           this.dataSource.data = this.documentsSignal();
         }
@@ -305,6 +315,7 @@ export class DocumentsComponent implements AfterViewInit {
         this.loadingSignal.set(false);
       }
     );
+
   }
   
   applyStatusFilter(status: string) {   
@@ -358,5 +369,19 @@ export class DocumentsComponent implements AfterViewInit {
       }
     );
 
+  }
+  announceSortChange(sortState: Sort) {
+    if (sortState.direction) {
+      this.sortedFile = `${sortState.active},${sortState.direction}`
+      this.loadDocuments()
+    } else {
+      this._liveAnnouncer.announce('Sorting cleared');
+      this.sortedFile = undefined
+      this.loadDocuments()
+    }
+  }
+  openDocument(doc: any): void {
+    const url = `/document/${doc.id}`;
+    window.open(url, '_blank'); 
   }
 }
