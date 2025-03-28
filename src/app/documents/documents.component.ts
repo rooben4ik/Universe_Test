@@ -294,7 +294,7 @@ export class DocumentsComponent implements AfterViewInit {
       (docs: any = {}) => {
         if(this.userInfo?.role === 'REVIEWER'){
           let filteredDocs = docs?.results || [];
-          filteredDocs = filteredDocs.filter((doc:any) => doc.status !== 'Draft');
+          // filteredDocs = filteredDocs.filter((doc:any) => doc.status !== 'Draft');
           this.documentsSignal.set(filteredDocs);
           this.dataSource.data = this.documentsSignal();
         }
