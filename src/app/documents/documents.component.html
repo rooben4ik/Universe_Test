@@ -94,7 +94,6 @@
   <!-- Add Document Modal Template -->
   <ng-template #addDocumentTemplate>
     <form *ngIf="!loading">
-      <!-- Form container with padding and background -->
       <div class="form-container">
         <!-- Modal Header with Close Button -->
         <div class="modal-header">
@@ -140,7 +139,6 @@
    <!-- Edit Document Modal Template -->
   <ng-template #editDocumentTemplate >
     <form *ngIf="!loading">
-      <!-- Form container with padding and background -->
       <div class="form-container">
         <!-- Modal Header with Close Button -->
         <div class="modal-header">
@@ -150,7 +148,6 @@
           </button>
         </div>
         <!-- Status Field -->
-         <!-- {{changedStatus |json}} -->
         <mat-form-field appearance="fill" class="full-width" *ngIf="userInfo?.role === 'REVIEWER'">
           <mat-label>Status</mat-label>
           <mat-select [(ngModel)]="changedStatus" name="status" required>
@@ -159,6 +156,7 @@
             <mat-option value="DECLINED">Declined</mat-option>
           </mat-select>
         </mat-form-field>
+        <!-- Name Field -->
         <mat-form-field appearance="fill" class="full-width" *ngIf="userInfo?.role === 'USER'">
             <mat-label>Document Name</mat-label>
             <input matInput [(ngModel)]="documentName" name="name" required />

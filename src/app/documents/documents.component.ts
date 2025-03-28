@@ -141,10 +141,8 @@ export class DocumentsComponent implements AfterViewInit {
   }
 
   editDocument(document: any) {
-    console.log(document);
     this.docId = document?.id
     this.documentName = document?.name
-    // this.changedStatus = document?.status
     const dialogRef = this.dialog.open(this.editDocumentTemplate, { data: document });
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
@@ -319,20 +317,16 @@ export class DocumentsComponent implements AfterViewInit {
   }
   
   applyStatusFilter(status: string) {   
-    console.log(status);
     this.statusFilter = status;
 
     this.loadDocuments()
   }
   applyCreatorFilter(creator: string) {   
-    console.log(creator);
     this.creatorFilter = creator;
 
     this.loadDocuments()
   }
   changeStatus(status:any) {   
-    console.log(this.docId);
-    console.log(status);
     this.httpService.changeStatusDocument(this.docId,{status:status}).subscribe(
       (response: any) => {
         this.snackBar.open('Document changed successfully!', '', { duration: 2000 });
@@ -351,8 +345,6 @@ export class DocumentsComponent implements AfterViewInit {
 
   }
   updateStatus(status:any) {   
-    console.log(this.docId);
-    console.log(status);
     this.httpService.UpdateDocument(this.docId,{name:status}).subscribe(
       (response: any) => {
         this.snackBar.open('Document changed successfully!', '', { duration: 2000 });

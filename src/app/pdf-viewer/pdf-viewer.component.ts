@@ -19,7 +19,6 @@ export class PdfViewerComponent implements OnInit {
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
       this.documentId = params.get('id');
-      console.log(this.documentId); 
       this.httpService.getDocument(this.documentId).subscribe(
         (doc: any = {}) => {
           NutrientViewer.load({
